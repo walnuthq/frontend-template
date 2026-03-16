@@ -1,14 +1,15 @@
 import { useMiden, useSyncState } from "@miden-sdk/react";
-import { WalletMultiButton } from "@miden-sdk/miden-wallet-adapter";
-import reactLogo from "@/assets/react.svg";
-import midenLogo from "@/assets/miden.svg";
-import viteLogo from "/vite.svg";
-import { Counter } from "@/components/Counter";
+import { useMidenFiWallet } from "@miden-sdk/miden-wallet-adapter-react";
+import { Messenger } from "@/components/Messenger";
+import { shortAddress } from "@/lib/messenger";
 import "./AppContent.css";
 
 export function AppContent() {
   const { isReady, isInitializing, error } = useMiden();
   const { syncHeight } = useSyncState();
+  const { address, connected, connecting, disconnecting, connect, disconnect } =
+    useMidenFiWallet();
+  const isWaitingForConnectedClient = connected && (isInitializing || !isReady);
 
   if (error) {
     return (
@@ -19,32 +20,39 @@ export function AppContent() {
     );
   }
 
-  if (isInitializing || !isReady) {
+  if (isWaitingForConnectedClient) {
     return <div className="loading">Initializing Miden client...</div>;
   }
 
+  const waitingMessage = connecting
+    ? "Connecting wallet..."
+    : "Connect your wallet to initialize Miden client.";
+
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank" rel="noreferrer">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noreferrer">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-        <a href="https://docs.miden.io" target="_blank" rel="noreferrer">
-          <img src={midenLogo} className="logo miden" alt="Miden logo" />
-        </a>
-      </div>
-      <h1>Vite + React + Miden</h1>
+    <div className="app-frame">
       <div className="wallet-section">
-        <WalletMultiButton />
+        <button
+          type="button"
+          onClick={() => void (connected ? disconnect() : connect())}
+          disabled={connecting || disconnecting}
+        >
+          {connecting
+            ? "Connecting..."
+            : disconnecting
+              ? "Disconnecting..."
+              : connected
+                ? `Disconnect ${shortAddress(address ?? "")}`
+                : "Connect Wallet"}
+        </button>
       </div>
-      <Counter />
-      <p className="read-the-docs">
-        Testnet block: {syncHeight ?? "syncing..."} | Click on the Vite, React,
-        and Miden logos to learn more
-      </p>
-    </>
+      {isReady ? (
+        <>
+          <Messenger />
+          <p className="read-the-docs">Testnet block: {syncHeight ?? "syncing..."}</p>
+        </>
+      ) : (
+        <div className="loading">{waitingMessage}</div>
+      )}
+    </div>
   );
 }
