@@ -1,9 +1,6 @@
 import { useMiden, useSyncState } from "@miden-sdk/react";
 import { WalletMultiButton } from "@miden-sdk/miden-wallet-adapter";
-import reactLogo from "@/assets/react.svg";
-import midenLogo from "@/assets/miden.svg";
-import viteLogo from "/vite.svg";
-import { Counter } from "@/components/Counter";
+import { Auction } from "@/components/Auction";
 import "./AppContent.css";
 
 export function AppContent() {
@@ -20,31 +17,30 @@ export function AppContent() {
   }
 
   if (isInitializing || !isReady) {
-    return <div className="loading">Initializing Miden client...</div>;
+    return (
+      <div className="loading">
+        <div className="loading-spinner" />
+        <p>Initializing Miden client...</p>
+      </div>
+    );
   }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank" rel="noreferrer">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noreferrer">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-        <a href="https://docs.miden.io" target="_blank" rel="noreferrer">
-          <img src={midenLogo} className="logo miden" alt="Miden logo" />
-        </a>
-      </div>
-      <h1>Vite + React + Miden</h1>
-      <div className="wallet-section">
-        <WalletMultiButton />
-      </div>
-      <Counter />
-      <p className="read-the-docs">
-        Testnet block: {syncHeight ?? "syncing..."} | Click on the Vite, React,
-        and Miden logos to learn more
-      </p>
+      <header className="app-header">
+        <span className="app-wordmark">Meridian Auctions</span>
+        <div className="app-header-right">
+          <span className="sync-status">
+            <span className="sync-dot" />
+            Block {syncHeight ?? "..."}
+          </span>
+          <WalletMultiButton />
+        </div>
+      </header>
+      <main className="app-main">
+        <Auction />
+      </main>
+      <footer className="app-footer">Powered by Miden</footer>
     </>
   );
 }
