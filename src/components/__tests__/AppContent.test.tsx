@@ -2,11 +2,14 @@ import { render, screen } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
 vi.mock("@miden-sdk/react", () => import("@/__tests__/mocks/miden-sdk-react"));
-vi.mock("@miden-sdk/miden-wallet-adapter", () => ({
-  WalletMultiButton: () => <button>Connect Wallet</button>,
+vi.mock("@/components/WalletButton", () => ({
+  WalletButton: () => <button>Connect Wallet</button>,
 }));
 vi.mock("@/components/Counter", () => ({
   Counter: () => <div data-testid="counter">Counter Mock</div>,
+}));
+vi.mock("@/components/RpsGame", () => ({
+  RpsGame: () => <div data-testid="rps-game">RpsGame Mock</div>,
 }));
 
 import { useMiden, useSyncState } from "@miden-sdk/react";

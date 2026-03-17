@@ -1,9 +1,5 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
-import {
-  useSyncState,
-  useAccount,
-  useImportAccount,
-} from "@miden-sdk/react";
+import { useState, useCallback } from "react";
+import { useSyncState } from "@miden-sdk/react";
 import {
   useMidenFiWallet,
   Transaction,
@@ -26,68 +22,67 @@ import {
   AccountId,
   Felt,
   FeltArray,
-  Word,
 } from "@miden-sdk/miden-sdk";
 import { randomWord } from "@/lib/miden";
-import {
-  COUNTER_SLOT_NAME,
-  EXPLORER_BASE_URL,
-  NETWORK_SYNC_DELAY_MS,
-} from "@/config";
+import { NETWORK_SYNC_DELAY_MS } from "@/config";
 
-export function useIncrementCounter(counterAddress: string) {
+const LOCALSTORAGE_KEY_PREFIX = "rps_move_";
+
+export function useRevealMove(gameAddress: string, refetchGame: () => void) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isWaiting, setIsWaiting] = useState(false);
 
   const { address: walletAddress, connected, requestTransaction } = useMidenFiWallet();
-  const { importAccount } = useImportAccount();
-  const { account, refetch } = useAccount(counterAddress);
   const { sync } = useSyncState();
 
-  // Import the counter account so the local client tracks it.
-  // The catch is intentional — the account may already be imported.
-  useEffect(() => {
-    importAccount({ type: "id", accountId: counterAddress }).catch(() => {});
-  }, [importAccount, counterAddress]);
+  const hasStoredMove = useCallback(() => {
+    if (!walletAddress) return false;
+    return localStorage.getItem(LOCALSTORAGE_KEY_PREFIX + walletAddress) !== null;
+  }, [walletAddress]);
 
-  // Read count from StorageMap
-  const count = useMemo(() => {
-    if (!account) return null;
-    const countKey = Word.newFromFelts([
-      new Felt(0n),
-      new Felt(0n),
-      new Felt(0n),
-      new Felt(1n),
-    ]);
-    const value = account.storage().getMapItem(COUNTER_SLOT_NAME, countKey);
-    return value ? Number(value.toU64s()[3]) : 0;
-  }, [account]);
-
-  const increment = useCallback(async () => {
+  const revealMove = useCallback(async () => {
     if (!walletAddress || !requestTransaction) return;
+
+    const stored = localStorage.getItem(LOCALSTORAGE_KEY_PREFIX + walletAddress);
+    if (!stored) {
+      setError("No stored move found. Did you commit a move first?");
+      return;
+    }
+
+    const { move, nonce } = JSON.parse(stored) as { move: number; nonce: number };
+
+    const moveNames: Record<number, string> = { 1: "Rock", 2: "Paper", 3: "Scissors" };
+    console.log(`[RPS] Revealing move: ${moveNames[move] ?? move}, nonce: ${nonce} (wallet: ${walletAddress})`);
     setError(null);
     setIsSubmitting(true);
     try {
-      // Load pre-compiled increment-note package
-      const buf = await fetch("/packages/increment_note.masp").then((r) =>
+      const buf = await fetch("/packages/rps_reveal_note.masp").then((r) =>
         r.arrayBuffer(),
       );
       const pkg = Package.deserialize(new Uint8Array(buf));
       const noteScript = NoteScript.fromPackage(pkg);
 
-      const counterAccountId = AccountId.fromBech32(counterAddress);
+      const gameAccountId = AccountId.fromBech32(gameAddress);
       const walletAccountId = AccountId.fromBech32(walletAddress);
 
-      // Build note recipient
+      const playerPrefix = walletAccountId.prefix();
+      const playerSuffix = walletAccountId.suffix();
+
+      // Note inputs: [prefix, suffix, move, nonce]
+      const noteInputFelts = new FeltArray();
+      noteInputFelts.push(playerPrefix);
+      noteInputFelts.push(playerSuffix);
+      noteInputFelts.push(new Felt(BigInt(move)));
+      noteInputFelts.push(new Felt(BigInt(nonce)));
+
       const serialNum = randomWord();
-      const inputs = new NoteInputs(new FeltArray());
+      const inputs = new NoteInputs(noteInputFelts);
       const recipient = new NoteRecipient(serialNum, noteScript, inputs);
 
-      // Build note metadata targeting the network counter account
-      const tag = NoteTag.withAccountTarget(counterAccountId);
+      const tag = NoteTag.withAccountTarget(gameAccountId);
       const attachment = NoteAttachment.newNetworkAccountTarget(
-        counterAccountId,
+        gameAccountId,
         NoteExecutionHint.always(),
       );
       const metadata = new NoteMetadata(
@@ -96,7 +91,6 @@ export function useIncrementCounter(counterAddress: string) {
         tag,
       ).withAttachment(attachment);
 
-      // Assemble the note and submit via wallet adapter
       const note = new Note(new NoteAssets(), metadata, recipient);
       const outputNote = OutputNote.full(note);
       const txRequest = new TransactionRequestBuilder()
@@ -105,32 +99,37 @@ export function useIncrementCounter(counterAddress: string) {
 
       const tx = Transaction.createCustomTransaction(
         walletAddress,
-        counterAddress,
+        gameAddress,
         txRequest,
       );
       await requestTransaction(tx);
+      console.log(`[RPS] Reveal submitted successfully`);
       setIsSubmitting(false);
 
-      // Wait for network to process the note, then re-sync
+      // Clean up stored move after successful reveal
+      localStorage.removeItem(LOCALSTORAGE_KEY_PREFIX + walletAddress);
+
       setIsWaiting(true);
+      console.log(`[RPS] Waiting for network to process reveal...`);
       await new Promise((r) => setTimeout(r, NETWORK_SYNC_DELAY_MS));
       await sync();
-      await refetch();
+      refetchGame();
+      console.log(`[RPS] Reveal confirmed`);
       setIsWaiting(false);
     } catch (err) {
+      console.error(`[RPS] Reveal failed:`, err);
       setIsSubmitting(false);
       setIsWaiting(false);
       setError(err instanceof Error ? err.message : String(err));
     }
-  }, [walletAddress, requestTransaction, counterAddress, sync, refetch]);
+  }, [walletAddress, requestTransaction, gameAddress, sync, refetchGame]);
 
   return {
-    increment,
-    count,
+    revealMove,
+    hasStoredMove,
     isSubmitting,
     isWaiting,
     error,
     walletConnected: connected,
-    explorerUrl: `${EXPLORER_BASE_URL}/account/${counterAddress}`,
   };
 }

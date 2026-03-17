@@ -1,0 +1,101 @@
+.rps-game {
+  padding: 2em;
+}
+
+.rps-game h2 {
+  margin-bottom: 1em;
+}
+
+.game-status {
+  margin-bottom: 1.5em;
+}
+
+.phase-label {
+  font-size: 1.1em;
+  color: #888;
+  margin-bottom: 0.5em;
+}
+
+.game-result {
+  margin-top: 0.5em;
+}
+
+.winner-label {
+  font-size: 1.3em;
+  font-weight: bold;
+  color: #646cff;
+}
+
+.moves-display {
+  font-size: 0.9em;
+  color: #888;
+  margin-top: 0.3em;
+}
+
+.move-selector {
+  display: flex;
+  gap: 1em;
+  justify-content: center;
+  margin-bottom: 1em;
+}
+
+.move-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3em;
+  padding: 1em 1.5em;
+  font-size: 1em;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background-color: #1a1a1a;
+  transition: border-color 0.25s;
+}
+
+.move-button:hover:not(:disabled) {
+  border-color: #646cff;
+}
+
+.move-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.move-emoji {
+  font-size: 2em;
+}
+
+.move-label {
+  font-size: 0.85em;
+  color: #888;
+}
+
+.reveal-button,
+.play-again-button {
+  padding: 0.8em 1.6em;
+  font-size: 1.1em;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background-color: #646cff;
+  color: white;
+  transition: background-color 0.25s;
+  margin-bottom: 1em;
+}
+
+.reveal-button:hover:not(:disabled),
+.play-again-button:hover:not(:disabled) {
+  background-color: #535bf2;
+}
+
+.reveal-button:disabled,
+.play-again-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status-message {
+  color: #888;
+  font-size: 0.9em;
+}

@@ -11,4 +11,5 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // No proxy needed — SDK connects directly to testnet RPC
 });

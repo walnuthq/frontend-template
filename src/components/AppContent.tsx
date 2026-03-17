@@ -1,9 +1,10 @@
 import { useMiden, useSyncState } from "@miden-sdk/react";
-import { WalletMultiButton } from "@miden-sdk/miden-wallet-adapter";
+import { WalletButton } from "@/components/WalletButton";
 import reactLogo from "@/assets/react.svg";
 import midenLogo from "@/assets/miden.svg";
 import viteLogo from "/vite.svg";
 import { Counter } from "@/components/Counter";
+import { RpsGame } from "@/components/RpsGame";
 import "./AppContent.css";
 
 export function AppContent() {
@@ -38,9 +39,10 @@ export function AppContent() {
       </div>
       <h1>Vite + React + Miden</h1>
       <div className="wallet-section">
-        <WalletMultiButton />
+        <WalletButton />
       </div>
       <Counter />
+      <RpsGame />
       <p className="read-the-docs">
         Testnet block: {syncHeight ?? "syncing..."} | Click on the Vite, React,
         and Miden logos to learn more
